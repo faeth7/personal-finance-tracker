@@ -32,33 +32,33 @@ The main aim of the application is to make managing money easier by providing us
 
 User stories describe features from the perspective of the people who will use the application. Each story has a priority based on its importance to the project.
 
-1. **[Must]** As a user, I want to create an account and log in so that my financial information is protected.
+1. **Must** As a user, I want to create an account and log in so that my financial information is protected.
 
-2. **[Must]** As Aisha, I want to record my income so that I can keep track of money received from student finance and my part-time job.
+2. **Must** As Aisha, I want to record my income so that I can keep track of money received from student finance and my part-time job.
 
-3. **[Must]** As Aisha, I want to record my expenses so that I can monitor how much money I spend.
+3. **Must** As Aisha, I want to record my expenses so that I can monitor how much money I spend.
 
-4. **[Must]** As a user, I want to edit a transaction so that I can correct incorrect financial information.
+4. **Must** As a user, I want to edit a transaction so that I can correct incorrect financial information.
 
-5. **[Must]** As a user, I want to delete a transaction so that I can remove records added by mistake.
+5. **Must** As a user, I want to delete a transaction so that I can remove records added by mistake.
 
-6. **[Must]** As Tom, I want to organise transactions into categories so that I can understand where my money goes.
+6. **Must** As Tom, I want to organise transactions into categories so that I can understand where my money goes.
 
-7. **[Must]** As a user, I want to view my total income, expenses and remaining balance so that I can understand my financial situation.
+7. **Must** As a user, I want to view my total income, expenses and remaining balance so that I can understand my financial situation.
 
-8. **[Must]** As a user, I want my financial information to remain private so that other users cannot access my records.
+8. **Must** As a user, I want my financial information to remain private so that other users cannot access my records.
 
-9. **[Should]** As Aisha, I want to create monthly budgets so that I can control my spending and avoid exceeding my limits.
+9. **Should** As Aisha, I want to create monthly budgets so that I can control my spending and avoid exceeding my limits.
 
-10. **[Should]** As Tom, I want to set savings goals so that I can work towards specific financial targets.
+10. **Should** As Tom, I want to set savings goals so that I can work towards specific financial targets.
 
-11. **[Should]** As a user, I want to search and filter transactions by date and category so that I can find specific financial records.
+11. **Should** As a user, I want to search and filter transactions by date and category so that I can find specific financial records.
 
-12. **[Should]** As Tom, I want to view basic charts showing my spending by category so that I can identify where most of my money goes.
+12. **Should** As Tom, I want to view basic charts showing my spending by category so that I can identify where most of my money goes.
 
-13. **[Could]** As a user, I want to export my financial reports as CSV files so that I can keep an external record of my finances.
+13. **Could** As a user, I want to export my financial reports as CSV files so that I can keep an external record of my finances.
 
-14. **[Could]** As Aisha, I want to receive notifications when I am approaching my monthly budget limit so that I can adjust my spending.
+14. **Could** As Aisha, I want to receive notifications when I am approaching my monthly budget limit so that I can adjust my spending.
 
 ## 4. MoSCoW Priorities
 
