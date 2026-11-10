@@ -2,282 +2,295 @@
 
 ## 1. Overview
 
-The Personal Finance Tracker will use a relational PostgreSQL database to store user accounts, transaction categories and financial transactions.
+The Personal Finance Tracker uses PostgreSQL as its relational database management system (RDBMS).
 
-The database will contain three main tables:
+The database stores user accounts, transaction categories and financial transactions. It is designed to keep financial information organised, accurate and secure.
 
-- `users` – stores registered user information.
-- `categories` – stores income and expense categories belonging to users.
-- `transactions` – stores users' income and expenses.
+The database contains three main tables:
 
-Each table will have a primary key, and foreign keys will connect related records.
+- `users`
+- `categories`
+- `transactions`
 
----
+Each table has a primary key to uniquely identify its records. Foreign keys connect the tables and maintain relationships between them.
 
-## 2. Users Table
+## 2. Database Tables
+
+### 2.1 Users Table
 
 The `users` table stores information about registered users.
 
-### Columns
-
-| Column | Data type | Required? | Description |
+| Column | Data Type | Constraints | Description |
 |---|---|---|---|
-| id | BIGINT | Yes | Primary key and unique user ID. |
-| name | VARCHAR(100) | Yes | User's full name. |
-| email | VARCHAR(255) | Yes | User's email address. Must be unique. |
-| password_hash | VARCHAR(255) | Yes | Securely hashed password. |
-| created_at | TIMESTAMP WITH TIME ZONE | Yes | Date and time the account was created. |
+| id | BIGINT | Primary Key, Identity | Unique user ID |
+| name | VARCHAR(100) | NOT NULL | User's name |
+| email | VARCHAR(255) | NOT NULL, UNIQUE | User's email address |
+| password_hash | VARCHAR(255) | NOT NULL | Securely hashed password |
+| created_at | TIMESTAMP WITH TIME ZONE | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Account creation date and time |
 
-### Rules
-- `id` is the primary key.
-- Email addresses must be unique.
-- All columns must contain a value.
-- Passwords must be hashed before being stored.
+**Purpose:**
 
----
+This table stores account information. Each user has a unique ID, which is used to connect their categories and transactions to their account.
 
-## 3. Categories Table
+Passwords are stored as hashes rather than plain text to improve account security.
 
-The `categories` table stores categories created for each user.
+### 2.2 Categories Table
 
-### Columns
+The `categories` table stores the categories created by each user.
 
-| Column | Data type | Required? | Description |
+| Column | Data Type | Constraints | Description |
 |---|---|---|---|
-| id | BIGINT | Yes | Primary key and unique category ID. |
-| user_id | BIGINT | Yes | Foreign key referencing users.id. |
-| name | VARCHAR(100) | Yes | Name of the category. |
-| type | VARCHAR(10) | Yes | Category type: INCOME or EXPENSE. |
+| id | BIGINT | Primary Key, Identity | Unique category ID |
+| user_id | BIGINT | Foreign Key, NOT NULL | Identifies the category owner |
+| name | VARCHAR(100) | NOT NULL | Category name |
+| type | VARCHAR(10) | NOT NULL, CHECK | INCOME or EXPENSE |
 
-### Examples
+**Purpose:**
 
-| id | user_id | name | type |
-|---|---|---|---|
-| 1 | 1 | Salary | INCOME |
-| 2 | 1 | Food | EXPENSE |
-| 3 | 2 | Freelance | INCOME |
-| 4 | 2 | Transport | EXPENSE |
+Categories help users organise their financial transactions.
 
-### Rules
-- `id` is the primary key.
-- `user_id` is a foreign key referencing `users.id`.
-- A user cannot have two categories with the same name.
-- Category names must be unique for each user using `UNIQUE (user_id, name)`.
-- The `type` column must only accept `INCOME` or `EXPENSE`.
-- Categories must belong to an existing user.
-
----
-
-## 4. Transactions Table
-
-The `transactions` table stores each user's financial transactions.
-
-### Columns
-
-| Column | Data type | Required? | Description |
-|---|---|---|---|
-| id | BIGINT | Yes | Primary key and unique transaction ID. |
-| user_id | BIGINT | Yes | Foreign key referencing users.id. |
-| category_id | BIGINT | No | Foreign key referencing the user's category. |
-| amount | NUMERIC(12,2) | Yes | Financial transaction amount. |
-| description | VARCHAR(255) | No | Optional transaction description. |
-| transaction_date | DATE | Yes | Date the transaction happened. |
-| created_at | TIMESTAMP WITH TIME ZONE | Yes | Date and time the transaction was recorded. |
-
-### Examples
-
-| id | user_id | category_id | amount | description |
-|---|---|---|---|---|
-| 1 | 1 | 2 | 12.50 | Lunch |
-| 2 | 1 | 1 | 900.00 | Monthly income |
-| 3 | 2 | 4 | 35.00 | Bus tickets |
-
-### Rules
-- `id` is the primary key.
-- `user_id` is a foreign key referencing `users.id`.
-- `category_id` is optional, allowing uncategorised transactions.
-- If a category is selected, it must belong to the same user as the transaction.
-- Amounts must be greater than zero.
-- Amounts use `NUMERIC(12,2)` to avoid floating-point precision problems.
-- Income or expense type is determined by the selected category.
-- A transaction must belong to an existing user.
-
----
-
-## 5. Relationships
-
-The database will use one-to-many relationships.
-
-- One user can have many categories.
-- One user can have many transactions.
-- One category can have many transactions.
-- Each category belongs to one user.
-- Each transaction belongs to one user.
-- Each transaction can have one category or no category.
-
-### Entity Relationship Diagram
-
-```text
-USERS
------
-PK id
-   name
-   email
-   password_hash
-   created_at
-   |
-   | 1
-   |
-   |------< Many
-   |
-CATEGORIES
-----------
-PK id
-FK user_id
-   name
-   type
-   |
-   | 1
-   |
-   |------< Many
-   |
-TRANSACTIONS
-------------
-PK id
-FK user_id
-FK category_id (optional)
-   amount
-   description
-   transaction_date
-   created_at
-```
-
----
-
-## 6. Preventing Users from Accessing Other Users' Categories
-
-A transaction must never use a category belonging to another user.
-
-For example, Aisha (user 1) must not be able to use a category belonging to Tom (user 2).
-
-We will use two layers of protection:
-
-### 6.1 Service Layer Validation
-
-Before saving a transaction, the Java Service layer will check that the selected category belongs to the logged-in user.
-
-If the category belongs to another user, the application will reject the request.
-
-### 6.2 Database-Level Protection
-
-PostgreSQL will use a composite foreign key.
-
-The `categories` table will have a unique constraint on:
-
-`UNIQUE (user_id, id)`
-
-The `transactions` table will reference:
-
-`FOREIGN KEY (user_id, category_id) REFERENCES categories(user_id, id)`
-
-This ensures that the transaction's user and category belong together.
-
-If `category_id` is NULL, the transaction can be saved without a category.
-
-Using both methods provides additional protection against incorrect data.
-
----
-
-## 7. Deleting Categories
-
-We will use `ON DELETE RESTRICT` for the category relationship.
-
-This means:
-- A category cannot be deleted while transactions are using it.
-- Users must move those transactions to another category or remove their category references first.
-- Once no transactions use the category, it can be deleted.
-
-We will not use `ON DELETE CASCADE` for categories because deleting a category should never automatically delete financial transactions.
-
-This protects the user's financial history.
-
----
-
-## 8. Default Categories
-
-When a new user registers, the application will automatically create some default categories.
-
-### Income categories
+Examples of income categories:
 - Salary
 - Freelance
 - Other Income
 
-### Expense categories
+Examples of expense categories:
 - Food
 - Transport
 - Shopping
 - Bills
 - Entertainment
 
-Each default category will belong to the newly registered user.
+Each category belongs to one user.
 
-Users will also be able to create their own categories.
+The combination of `user_id` and `name` must be unique, which prevents the same user from creating duplicate category names.
 
-Default categories will be created by the backend during registration.
+The category type is restricted to either `INCOME` or `EXPENSE` using a CHECK constraint.
 
----
+### 2.3 Transactions Table
 
-## 9. Database Constraints and Rules
+The `transactions` table stores the income and expenses recorded by users.
 
-The database will enforce the following rules:
+| Column | Data Type | Constraints | Description |
+|---|---|---|---|
+| id | BIGINT | Primary Key, Identity | Unique transaction ID |
+| user_id | BIGINT | Foreign Key, NOT NULL | Identifies the transaction owner |
+| category_id | BIGINT | Foreign Key, NULL allowed | Identifies the transaction category |
+| type | VARCHAR(10) | NOT NULL, CHECK | INCOME or EXPENSE |
+| amount | NUMERIC(12,2) | NOT NULL, CHECK | Transaction amount |
+| description | VARCHAR(255) | Optional | Additional transaction details |
+| transaction_date | DATE | NOT NULL | Date of the transaction |
+| created_at | TIMESTAMP WITH TIME ZONE | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Record creation date and time |
 
-1. Every table must have a primary key.
-2. Email addresses must be unique.
-3. Foreign keys must reference existing records.
-4. Category names must be unique for each user.
-5. Category types must only accept INCOME or EXPENSE.
-6. Transaction amounts must be greater than zero.
-7. Required columns must use NOT NULL.
-8. Transactions cannot reference another user's category.
-9. Categories cannot be deleted while transactions still reference them.
-10. Transaction amounts must use an accurate decimal data type.
+**Purpose:**
 
----
+This table records money coming into and going out of a user's account.
 
-## 10. Security Rules
+The transaction type must be either `INCOME` or `EXPENSE`.
 
-These rules will be enforced by the Spring Boot backend rather than relying only on the database:
+The amount must be greater than zero. The `NUMERIC(12,2)` data type is used to store financial values accurately to two decimal places.
 
-- Passwords must be securely hashed using a suitable algorithm such as Argon2 or bcrypt.
-- Users must only access their own financial information.
-- The backend must validate requests before saving information.
-- The logged-in user's identity must determine transaction ownership, not an untrusted user ID supplied by the frontend.
-- Users must not be able to access or modify another user's transactions or categories.
+The category is optional because users should be able to record transactions without selecting a category.
 
----
+## 3. Relationships Between Tables
 
-## 11. Design Decisions
+The database uses the following relationships:
+
+**Users and Categories – One-to-Many**
+
+One user can have multiple categories, but each category belongs to one user.
+
+**Users and Transactions – One-to-Many**
+
+One user can have multiple transactions, but each transaction belongs to one user.
+
+**Categories and Transactions – One-to-Many**
+
+One category can be connected to multiple transactions. A transaction can have one category or no category.
+
+### Relationship Diagram
+
+```text
+USERS
+-----
+id (PK)
+ |
+ | 1
+ |
+ |--------------------|
+ |                    |
+ | many               | many
+ |                    |
+CATEGORIES         TRANSACTIONS
+----------         ------------
+id (PK)            id (PK)
+user_id (FK)       user_id (FK)
+name               category_id (FK, optional)
+type               type
+                   amount
+                   description
+                   transaction_date
+                   created_at
+```
+
+## 4. Primary Keys and Foreign Keys
+
+**Primary Keys (PK)**
+
+A primary key uniquely identifies each record in a table.
+
+For example, the `id` column in the users table identifies each registered user.
+
+**Foreign Keys (FK)**
+
+A foreign key connects one table to another by referencing its primary key or a suitable unique key.
+
+For example, `user_id` in the transactions table references `id` in the users table.
+
+This ensures that a transaction cannot belong to a user who does not exist.
+
+## 5. Data Validation and Integrity
+
+The database uses constraints to prevent invalid information from being stored.
+
+### 5.1 Unique Constraints
+
+- Each user must have a unique email address.
+- A user cannot create two categories with the same name.
+- Categories also have a unique combination of `user_id`, `id` and `type` to support transaction validation.
+
+### 5.2 Check Constraints
+
+The database uses CHECK constraints to validate information.
+
+- Category type must be `INCOME` or `EXPENSE`.
+- Transaction type must be `INCOME` or `EXPENSE`.
+- Transaction amount must be greater than zero.
+
+### 5.3 Transaction and Category Type Validation
+
+Every transaction must have a type, even when no category is selected.
+
+If a transaction has a category, its type must match the category's type.
+
+For example:
+
+| Transaction Type | Category | Category Type | Result |
+|---|---|---|---|
+| INCOME | Salary | INCOME | Allowed |
+| EXPENSE | Food | EXPENSE | Allowed |
+| INCOME | Food | EXPENSE | Rejected |
+| EXPENSE | Salary | INCOME | Rejected |
+| INCOME | No category | N/A | Allowed |
+
+PostgreSQL enforces this using a composite foreign key involving:
+
+- `user_id`
+- `category_id`
+- `type`
+
+The categories table has a matching unique constraint on these columns.
+
+This prevents users from assigning income transactions to expense categories and vice versa.
+
+### 5.4 Financial Data Accuracy
+
+The database uses `NUMERIC(12,2)` instead of FLOAT or DOUBLE for financial amounts.
+
+This avoids common floating-point precision problems when storing and calculating money.
+
+### 5.5 User Data Protection
+
+The database uses foreign keys to ensure that categories and transactions reference existing users.
+
+The backend will also enforce user ownership so that users can only access their own financial information.
+
+## 6. Deletion Rules
+
+The database uses `ON DELETE RESTRICT` on its foreign keys.
+
+This prevents a record from being deleted when other records still depend on it.
+
+For example:
+
+- A user cannot be deleted while they have categories or transactions.
+- A category cannot be deleted while transactions still reference it.
+
+This protects financial history from accidental deletion.
+
+The application will need a deliberate account-closure process to handle a user's data safely.
+
+## 7. Database Indexing
+
+The database includes an index on the transactions table:
+
+`idx_transactions_user_date`
+
+It uses the following columns:
+
+```sql
+CREATE INDEX idx_transactions_user_date
+    ON transactions (user_id, transaction_date);
+```
+
+**Purpose:**
+
+The most common database query will involve finding a user's transactions within a particular date range.
+
+For example, displaying all transactions for one user during a specific month.
+
+The index helps PostgreSQL find these records more efficiently.
+
+Additional indexes may be introduced later if testing shows they are needed.
+
+## 8. Security Considerations
+
+The database and backend will work together to protect financial information.
+
+Security measures include:
+
+- Passwords will be stored as secure hashes, not plain text.
+- Each transaction and category will be connected to its owner.
+- Users will only be able to access their own financial records.
+- Database constraints will prevent invalid relationships.
+- Database credentials will be stored in environment variables rather than committed to GitHub.
+- The backend will validate user input before saving information.
+
+## 9. Database Design Decisions
 
 | Decision | Reason |
 |---|---|
-| PostgreSQL | Provides reliable relational data storage. |
-| Three main tables | Separates users, categories and transactions. |
-| Primary and foreign keys | Connects records and maintains data integrity. |
-| Categories belong to users | Allows users to create their own categories. |
-| Composite foreign key | Prevents transactions using another user's categories. |
-| ON DELETE RESTRICT | Protects financial transaction history. |
-| NUMERIC(12,2) | Stores financial amounts accurately. |
-| Optional category_id | Allows transactions without a category. |
-| Unique category names per user | Prevents duplicate categories. |
+| PostgreSQL | Reliable relational database |
+| BIGINT primary keys | Provides unique record identification |
+| NUMERIC(12,2) | Accurate financial values |
+| Optional category_id | Allows uncategorised transactions |
+| Transaction type column | Identifies income and expenses independently of categories |
+| Composite foreign key | Ensures transaction and category types match |
+| UNIQUE constraints | Prevent duplicate records |
+| CHECK constraints | Restrict invalid values |
+| ON DELETE RESTRICT | Protects financial records |
+| Transaction date index | Improves date-based transaction searches |
 
-## 12. Initial Project Scope
+## 10. Future Improvements
 
-The first database version will support:
+The database may be extended as the project develops.
 
-- User account information.
-- Income and expense categories.
-- Adding and storing transactions.
-- Connecting transactions to their owners and categories.
-- Basic financial data retrieval.
+Possible improvements include:
 
-More advanced features, such as budgets, savings goals and financial reports, will be introduced in later development stages.
+- Monthly budgeting.
+- Savings goals.
+- Recurring transactions.
+- Financial reports and summaries.
+- Multiple currencies.
+- Improved account management.
+- Additional indexes based on application performance.
+
+These features will be considered during later development stages.
+
+## 11. Conclusion
+
+The database is designed to provide a structured and reliable way to store personal financial information.
+
+It uses three main tables connected through primary and foreign keys. Constraints help maintain accurate financial records, while indexing supports efficient transaction searches.
+
+The design also allows uncategorised transactions while ensuring that income and expense types remain consistent with selected categories.
