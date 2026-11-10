@@ -1,3 +1,9 @@
+-- ==========================================
+-- PERSONAL FINANCE TRACKER
+-- DATABASE SCHEMA
+-- ==========================================
+
+-- 1. USERS TABLE
 CREATE TABLE users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -7,6 +13,7 @@ CREATE TABLE users (
 );
 
 
+-- 2. CATEGORIES TABLE
 CREATE TABLE categories (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -15,7 +22,8 @@ CREATE TABLE categories (
 
     CONSTRAINT fk_categories_user
         FOREIGN KEY (user_id)
-        REFERENCES users(id),
+        REFERENCES users(id)
+        ON DELETE RESTRICT,
 
     CONSTRAINT unique_category_per_user
         UNIQUE (user_id, name),
@@ -28,10 +36,12 @@ CREATE TABLE categories (
 );
 
 
+-- 3. TRANSACTIONS TABLE
 CREATE TABLE transactions (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
     category_id BIGINT,
+    type VARCHAR(10) NOT NULL,
     amount NUMERIC(12,2) NOT NULL,
     description VARCHAR(255),
     transaction_date DATE NOT NULL,
@@ -39,7 +49,8 @@ CREATE TABLE transactions (
 
     CONSTRAINT fk_transactions_user
         FOREIGN KEY (user_id)
-        REFERENCES users(id),
+        REFERENCES users(id)
+        ON DELETE RESTRICT,
 
     CONSTRAINT fk_transactions_category
         FOREIGN KEY (user_id, category_id)
@@ -47,5 +58,13 @@ CREATE TABLE transactions (
         ON DELETE RESTRICT,
 
     CONSTRAINT check_transaction_amount
-        CHECK (amount > 0)
+        CHECK (amount > 0),
+
+    CONSTRAINT check_transaction_type
+        CHECK (type IN ('INCOME', 'EXPENSE'))
 );
+
+
+-- 4. TRANSACTION INDEX
+CREATE INDEX idx_transactions_user_date
+    ON transactions (user_id, transaction_date);
